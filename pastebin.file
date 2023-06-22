@@ -58,3 +58,10 @@ jobs:
         with:
           name: react-github-actions-build
           path: build
+
+
+
+
+  - name: Cleanup Git Config
+    run: git config --local --unset-all http.extraheader
+    continue-on-error: true
