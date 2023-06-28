@@ -70,13 +70,13 @@ jobs:
     for (( i=0; i<$length; i++ ))
     
     do
-    REPO=$(jq -r ".[$i].repo_url" externalRemotes.config.json | sed 's|https://github.com/sede-x/||')"
+    REPO=$(jq -r ".[$i].repo_url" externalRemotes.config.json | sed 's|https://github.com/org/||')"
     PATH=$WORKSPACE/host-app/out/$REPO"
     TAG=$(jq -r ".[$i].version" externalRemotes.config.json)"
-    TOKEN=$(jq -r ".[$i].repo_url" externalRemotes.config.json | sed 's|https://github.com/sede-x/beacon-frontend-||'|tr '[:lower:]' '[:upper:]')_TOKEN"
+    TOKEN=$(jq -r ".[$i].repo_url" externalRemotes.config.json | sed 's|https://github.com/org/beacon-frontend-||'|tr '[:lower:]' '[:upper:]')_TOKEN"
     
     echo "Cloning $REPO to directory $PATH"
-    git clone --branch $TAG https://"$TOKEN"@github.com/sede-x/"$REPO" $PATH
+    git clone --branch $TAG https://"$TOKEN"@github.com/org/"$REPO" $PATH
     
     echo "Building and testing app"
     npm ci --prefix $PATH
