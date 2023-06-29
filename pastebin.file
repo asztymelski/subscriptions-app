@@ -95,3 +95,73 @@ jobs:
   - name: Cleanup Git Config
     run: git config --local --unset-all http.extraheader
     continue-on-error: true
+################matrix#############
+name: Azure Static Web Apps CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+
+jobs:
+  sonarscan:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  
+  build_main:
+    needs: sonarscan
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    name: Build frontend host
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: npm run install:apps
+      - name: Generate matrix
+        id: set-matrix
+        run: |
+          json=$(jq -c . externalRemotes.config.json)
+          echo "::set-output name=matrix::{\"include\":$json}"
+      
+  build-test-remotes:
+    needs: build_main
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.build_main.outputs.matrix)}}
+
+    steps:
+      - name: Checkout remote repo
+        uses: actions/checkout@v3
+        with:
+          repository: '${{ matrix.repo }}'
+          ref: '${{ matrix.version }}'
+          token: ${{ secrets.PAT }}
+      - name: Install remote repo dependencies
+        run: npm install
+
+      - name: Build and Test remote repo
+        run: npm run build && npm test
+
+      - name: Copy build artifacts
+        run: |
+          mkdir -p ${{ github.workspace }}/host-app/out/${{ matrix.repo }}
+          cp -R build/* ${{ github.workspace }}/host-app/out/${{ matrix.repo }}
+  
+  deploy:
