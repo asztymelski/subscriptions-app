@@ -8,7 +8,7 @@ function App() {
         <img src={logo} className="App-logo" alt="logo" />
         <p>
           Edit <code>src/App.js</code> and save to reload.
-          subscription-app-test
+          <p>SUBSCRIPTIONS</p>
         </p>
         <a
           className="App-link"
